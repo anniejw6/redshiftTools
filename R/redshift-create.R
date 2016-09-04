@@ -13,7 +13,7 @@ rs_create_table <- function(.data, dbcon, table_name) {
   if (any("factor" %in% classes_first_pass)) {
     warning("one of the columns is a factor")
   }
-  data_types <- recode(unlist(classes_first_pass),
+  data_types <- dplyr::recode(unlist(classes_first_pass),
          factor = "VARCHAR(255)",
          numeric = "FLOAT8",
          integer = "BIGINT",
