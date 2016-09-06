@@ -41,14 +41,8 @@ rs_replace_table = function(
   Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
   Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
 
-  if(missing(split_files)){
-    print("Getting number of slices from Redshift")
-    slices <- queryDo(dbcon,"select count(*) from stv_slices")
-    split_files <- unlist(slices[1]*4)
-    print(sprintf("%s slices detected, will split into %s files", slices, split_files))
-  }
+  split_files <- min(split_files, 1)
 
-  split_files <- min(split_files, nrow(data))
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
     print("Deleting temporary files from S3 bucket")
@@ -58,8 +52,9 @@ rs_replace_table = function(
   result = tryCatch({
 
 
-    print("Truncating target table")
-    DBI::dbSendQuery(dbcon, sprintf("truncate table %s", tableName))
+    #print("Truncating target table")
+    #DBI::dbSendQuery(dbcon, sprintf("truncate table %s;", tableName))
+    #DBI::dbCommit(dbcon)
 
     print("Copying data from S3 into Redshift")
     if(remove_quotes) {
@@ -67,7 +62,7 @@ rs_replace_table = function(
     } else {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     }
-    DBI::dbSendQuery(dbcon, sprintf(query_string,
+    z <- DBI::dbExecute(dbcon, sprintf(query_string,
                            tableName,
                            bucket,
                            prefix,
@@ -75,12 +70,13 @@ rs_replace_table = function(
                            access_key,
                            secret_key
     ))
+
     return(TRUE)
   }, warning = function(w) {
     print(w)
   }, error = function(e) {
     print(e$message)
-    DBI::dbSendQuery(dbcon, 'ROLLBACK;')
+    # DBI::dbSendQuery(dbcon, 'ROLLBACK;')
     return(FALSE)
   })
   return (result)
