@@ -13,12 +13,12 @@ rs_create_table <- function(.data, dbcon, table_name) {
   if (any("factor" %in% classes_first_pass)) {
     warning("one of the columns is a factor")
   }
-  data_types <- recode(unlist(classes_first_pass),
+  data_types <- dplyr::recode(unlist(classes_first_pass),
          factor = "VARCHAR(255)",
          numeric = "FLOAT8",
          integer = "BIGINT",
          character = "VARCHAR(255)")
   spec <- paste(paste(names(.data), data_types), collapse=", ")
   sql_code <- whisker::whisker.render("CREATE TABLE IF NOT EXISTS {{table_name}} ({{spec}})")
-  DBI::dbGetQuery(dbcon, sql_code)
+  DBI::dbSendQuery(dbcon, sql_code)
 }
