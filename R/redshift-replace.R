@@ -30,7 +30,7 @@ rs_replace_table = function(
   data,
   dbcon,
   tableName,
-  split_files,
+  split_files = 1,
   bucket = Sys.getenv('AWS_BUCKET_NAME'),
   region = Sys.getenv('AWS_DEFAULT_REGION'),
   access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
